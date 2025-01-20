@@ -1198,4 +1198,22 @@ if (!function_exists('mask2cidr'))
     }
 }
 
+
+if (!function_exists('protect_file'))
+{
+  function protect_file(
+    $file,
+    $sid
+  ) {
+    if (mb_strtolower(mb_substr(PHP_OS, 0, 3),'UTF-8') === 'win') {
+      $sidAdmin = 'S-1-5-32-544';
+      $sidUsers = 'S-1-5-32-545';
+      $sidAuthenticatedUsers = 'S-1-5-11';
+      exec("icacls \"$file\" /grant *$sid:F");
+      exec("icacls \"$file\" /grant *$sidAdmin:F");
+      exec("icacls \"$file\" /inheritance:r /remove:g *$sidUsers");
+      exec("icacls \"$file\" /inheritance:r /remove:g *$sidAuthenticatedUsers");
+    }
+  }
+}
 ?>

@@ -22,17 +22,17 @@
  * PHP 5.4.0 or higher is supported.
  *
  * @author    Andre Liechti, SysCo systemes de communication sa, <info@multiotp.net>
- * @version   5.9.8.0
- * @date      2024-08-26
+ * @version   5.9.9.1
+ * @date      2025-01-20
  * @since     2013-07-10
- * @copyright (c) 2013-2024 SysCo systemes de communication sa
+ * @copyright (c) 2013-2025 SysCo systemes de communication sa
  * @copyright GNU Lesser General Public License
  *
  *//*
  *
  * LICENCE
  *
- *   Copyright (c) 2013-2024 SysCo systemes de communication sa
+ *   Copyright (c) 2013-2025 SysCo systemes de communication sa
  *   SysCo (tm) is a trademark of SysCo systemes de communication sa
  *   (http://www.sysco.ch/)
  *   All rights reserved.

@@ -11,10 +11,10 @@ REM
 REM Windows batch file for Windows 2K/XP/2003/7/2008/8/2012/10/2019
 REM
 REM @author    Andre Liechti, SysCo systemes de communication sa, <info@multiotp.net>
-REM @version   5.9.8.0
-REM @date      2024-08-26
+REM @version   5.9.9.1
+REM @date      2025-01-20
 REM @since     2010-07-10
-REM @copyright (c) 2010-2024 SysCo systemes de communication sa
+REM @copyright (c) 2010-2025 SysCo systemes de communication sa
 REM @copyright GNU Lesser General Public License
 REM
 REM
@@ -38,7 +38,7 @@ REM
 REM
 REM Licence
 REM
-REM   Copyright (c) 2010-2024 SysCo systemes de communication sa
+REM   Copyright (c) 2010-2025 SysCo systemes de communication sa
 REM   SysCo (tm) is a trademark of SysCo systemes de communication sa
 REM   (http://www.sysco.ch/)
 REM   All rights reserved.
@@ -142,6 +142,9 @@ REM Web service test ports
 IF "%_check_web_port%"=="" SET _check_web_port=58112
 IF "%_check_ssl_port%"=="" SET _check_ssl_port=58113
 
+REM SID value
+IF "%_check_sid%"=="" SET _check_ssl_port=1-2-3-4
+
 REM Ports can also be defined as parameters
 IF NOT "%1"=="" SET _check_r_auth_port=%1
 IF NOT "%2"=="" SET _check_r_acct_port=%2
@@ -208,7 +211,32 @@ IF "mysql"=="%_backend%" %_multiotp% -display-log -initialize-backend
 IF "pgsql"=="%_backend%" %_multiotp% -display-log -initialize-backend
 
 
-REM Delete the test_stéphane (if existing)
+REM Delete the user test_2fa_8 (if existing), result is 12 if deleted
+%_multiotp% -log -delete test_2fa_8
+IF NOT ERRORLEVEL 13 ECHO.
+IF NOT ERRORLEVEL 13 ECHO - User test_2fa_8 successfully deleted
+
+ECHO.
+ECHO Create user test_2fa_8 with the RFC test values HOTP token and an alpha PIN
+%_multiotp% -log -config default-2fa-digits=8
+%_multiotp% -log -create -prefix-pin test_2fa_8 HOTP 3132333435363738393031323334353637383930 "ThisIsMyPinCode"
+IF NOT ERRORLEVEL 12 ECHO - OK! User test_2fa_8 successfully created
+IF NOT ERRORLEVEL 12 SET /A SUCCESSES=SUCCESSES+1
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_2fa_8
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_2fa_8 (%_backend%) >>"%TEMP%\multiotp_error.log"
+%_multiotp% -log -config default-2fa-digits=6
+SET /A TOTAL_TESTS=TOTAL_TESTS+1
+
+ECHO.
+ECHO Authenticate test_2fa_8 with the second token of the RFC test values, with prefix
+%_multiotp% -keep-local -log test_2fa_8 "ThisIsMyPinCode94287082"
+IF NOT ERRORLEVEL 1 ECHO - OK! Token of the user test_2fa_8 successfully accepted
+IF NOT ERRORLEVEL 1 SET /A SUCCESSES=SUCCESSES+1
+IF ERRORLEVEL 1 ECHO - KO! Error %ERRORLEVEL% authenticating test_2fa_8 with prefix
+IF ERRORLEVEL 1 ECHO - KO! Error %ERRORLEVEL% authenticating test_2fa_8 with prefix (%_backend%) >>"%TEMP%\multiotp_error.log"
+SET /A TOTAL_TESTS=TOTAL_TESTS+1
+
+REM Delete the user test_stéphane (if existing)
 %_multiotp% -log -delete test_stéphane
 IF NOT ERRORLEVEL 13 ECHO.
 IF NOT ERRORLEVEL 13 ECHO - User test_stéphane successfully deleted
@@ -218,28 +246,28 @@ ECHO Create user test_stéphane with the RFC test values HOTP token and a big al
 %_multiotp% -log -create -prefix-pin test_stéphane HOTP 3132333435363738393031323334353637383930 "ThisIsALongNonDigitPinCode!" 6 0
 IF NOT ERRORLEVEL 12 ECHO - OK! User test_stéphane successfully created
 IF NOT ERRORLEVEL 12 SET /A SUCCESSES=SUCCESSES+1
-IF ERRORLEVEL 12 ECHO - KO! Error creating the user test_stéphane
-IF ERRORLEVEL 12 ECHO - KO! Error creating the user test_stéphane (%_backend%) >>"%TEMP%\multiotp_error.log"
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_stéphane
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_stéphane (%_backend%) >>"%TEMP%\multiotp_error.log"
 SET /A TOTAL_TESTS=TOTAL_TESTS+1
 
 ECHO.
 ECHO Authenticate test_stéphane with the first token of the RFC test values, no prefix
-%_multiotp% -keep-local -log test_st\351phane 755224
-IF NOT ERRORLEVEL 1 ECHO - KO! Token of the user test_stéphane successfully accepted without prefix
-IF NOT ERRORLEVEL 1 ECHO - KO! Token of the user test_stéphane successfully accepted without prefix (%_backend%) >>"%TEMP%\multiotp_error.log"
-IF NOT ERRORLEVEL 1 GOTO ErrorNoPrefix
-IF ERRORLEVEL 1 ECHO - OK! Token of the user test_stéphane successfully REJECTED (no prefix)
-IF ERRORLEVEL 1 SET /A SUCCESSES=SUCCESSES+1
+%_multiotp% -usersid=%_check_sid% -keep-local -log test_st\351phane 755224
+IF NOT ERRORLEVEL 90 ECHO - KO! Token of user test_stéphane (SID %_check_sid%) not refused (error %ERRORLEVEL%)
+IF NOT ERRORLEVEL 90 ECHO - KO! Token of user test_stéphane (SID %_check_sid%) not refused (error %ERRORLEVEL%) (%_backend%) >>"%TEMP%\multiotp_error.log"
+IF NOT ERRORLEVEL 90 GOTO ErrorNoPrefix
+IF ERRORLEVEL 90 ECHO - OK! Token of the user test_stéphane successfully REJECTED (no prefix)
+IF ERRORLEVEL 90 SET /A SUCCESSES=SUCCESSES+1
 :ErrorNoPrefix
 SET /A TOTAL_TESTS=TOTAL_TESTS+1
 
 ECHO.
 ECHO Authenticate test_stéphane with the first token of the RFC test values, with prefix
-%_multiotp% -keep-local -log test_st\351phane "ThisIsALongNonDigitPinCode!755224"
-IF NOT ERRORLEVEL 1 ECHO - OK! Token of the user test_stéphane successfully accepted
+%_multiotp% -usersid=%_check_sid% -keep-local -log test_st\351phane "ThisIsALongNonDigitPinCode!755224"
+IF NOT ERRORLEVEL 1 ECHO - OK! Token of the user test_stéphane (SID %_check_sid%) successfully accepted
 IF NOT ERRORLEVEL 1 SET /A SUCCESSES=SUCCESSES+1
-IF ERRORLEVEL 1 ECHO - KO! Error authenticating the user test_stéphane with the first token
-IF ERRORLEVEL 1 ECHO - KO! Error authenticating the user test_stéphane with the first token (%_backend%) >>"%TEMP%\multiotp_error.log"
+IF ERRORLEVEL 1 ECHO - KO! Error %ERRORLEVEL% authenticating test_stéphane (SID %_check_sid%) with prefix
+IF ERRORLEVEL 1 ECHO - KO! Error %ERRORLEVEL% authenticating test_stéphane (SID %_check_sid%) with prefix (%_backend%) >>"%TEMP%\multiotp_error.log"
 SET /A TOTAL_TESTS=TOTAL_TESTS+1
 
 REM Delete the test_user (if existing)
@@ -252,8 +280,8 @@ ECHO Create user test_user with the RFC test values HOTP token and a big alpha P
 %_multiotp% -log -create -prefix-pin test_user HOTP 3132333435363738393031323334353637383930 "ThisIsALongNonDigitPinCode!" 6 0
 IF NOT ERRORLEVEL 12 ECHO - OK! User test_user successfully created
 IF NOT ERRORLEVEL 12 SET /A SUCCESSES=SUCCESSES+1
-IF ERRORLEVEL 12 ECHO - KO! Error creating the user test_user
-IF ERRORLEVEL 12 ECHO - KO! Error creating the user test_user (%_backend%) >>"%TEMP%\multiotp_error.log"
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_user
+IF ERRORLEVEL 12 ECHO - KO! Error %ERRORLEVEL% creating the user test_user (%_backend%) >>"%TEMP%\multiotp_error.log"
 SET /A TOTAL_TESTS=TOTAL_TESTS+1
 
 ECHO.

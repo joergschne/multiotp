@@ -471,6 +471,11 @@ session {
 #  Once we KNOW that the user has been authenticated, there are
 #  additional steps we can take.
 post-auth {
+
+  update reply { # multiOTP force Message-Authenticator (1/3)
+    Message-Authenticator := 0x00 # multiOTP force Message-Authenticator (2/3)
+  } # multiOTP force Message-Authenticator (3/3)
+
 	#  Get an address from the IP Pool.
 #	main_pool
 

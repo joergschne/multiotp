@@ -35,17 +35,17 @@
  * PHP 5.4.0 or higher is supported.
  *
  * @author    Andre Liechti, SysCo systemes de communication sa, <info@multiotp.net>
- * @version   5.9.8.0
- * @date      2024-08-26
+ * @version   5.9.9.1
+ * @date      2025-01-20
  * @since     2010-06-08
- * @copyright (c) 2010-2024 SysCo systemes de communication sa
+ * @copyright (c) 2010-2025 SysCo systemes de communication sa
  * @copyright GNU Lesser General Public License
  *
  *//*
  *
  * LICENCE
  *
- *   Copyright (c) 2010-2024 SysCo systemes de communication sa
+ *   Copyright (c) 2010-2025 SysCo systemes de communication sa
  *   SysCo (tm) is a trademark of SysCo systemes de communication sa
  *   (http://www.sysco.ch)
  *   All rights reserved.
@@ -376,6 +376,7 @@ $server_timeout      = '';
 $server_url          = '';
 $state               = '';
 $sync_delete_retention_days = '';
+$user_sid            = '';
 $write_config_data   = false;
 $write_param_data    = false;
 $nt_key_only         = false;
@@ -677,6 +678,11 @@ for ($arg_loop=$loop_start; $arg_loop < $argc; $arg_loop++) {
             if (2 == count($src_array)) {
                 $sync_delete_retention_days = clean_quotes($src_array[1]);
             }
+        } elseif ("-usersid=" == mb_substr(mb_strtolower($current_arg,'UTF-8'),0,9)) {
+            $src_array = explode("=",$current_arg,2);
+            if (2 == count($src_array)) {
+                $user_sid = clean_quotes($src_array[1]);
+            }
         } elseif ("-cp" == mb_strtolower($current_arg,'UTF-8')) {
             $cp_mode = true;
         } elseif ("-debug" == mb_strtolower($current_arg,'UTF-8')) {
@@ -707,7 +713,7 @@ for ($arg_loop=$loop_start; $arg_loop < $argc; $arg_loop++) {
             $token_id_creation = true;
         } else {
             $param_count++;
-            $all_args[$param_count] = $current_arg;
+            $all_args[$param_count] = nullable_trim($current_arg);
         }
     }
 
@@ -816,6 +822,7 @@ if (($command == "libhash") || ($command == "help") || ($command == "hardware") 
       $multiotp->SetGroupsFolder($multiotp_etc_dir.'/groups/');
       $multiotp->SetTokensFolder($multiotp_etc_dir.'/tokens/');
       $multiotp->SetUsersFolder($multiotp_etc_dir.'/users/');
+      $multiotp->SetCredUsersFolder($multiotp_etc_dir.'/credusers/');
       $multiotp->SetCacheFolder('/tmp/cache/');
       $multiotp->SetLinuxFileMode('0666');
     }
@@ -920,6 +927,9 @@ $multiotp->SetMsChapChallenge($ms_chap_challenge);
 $multiotp->SetMsChapResponse($ms_chap_response);
 $multiotp->SetMsChap2Response($ms_chap2_response);
 $multiotp->SetState($state);
+if ("" != $user_sid) {
+  $multiotp->SetCurrentUserSid($user_sid);
+}
 
 if (($multiotp->IsDeveloperMode())) {
   $loop_start = 1;
@@ -1269,7 +1279,7 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 } else {
                   $multiotp->SetUserPin($all_args[4]);
                   if ('' == $all_args[5]) {
-                      $all_args[5] = 6; // Default number of digits is set to 6
+                      $all_args[5] = $multiotp->GetDefault2faDigits(); // Default number of digits is set to 6
                   }
                   $multiotp->SetUserTokenNumberOfDigits($all_args[5]);
                   switch (mb_strtoupper($all_args[2],'UTF-8')) {
@@ -1584,6 +1594,10 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                             case 'debug-prefix':
                                 $multiotp->SetVerboseLogPrefix($actual_array[1]);
                                 $verbose_prefix = $multiotp->GetVerboseLogPrefix();
+                                $write_config_data = true;
+                                break;
+                            case 'default-2fa-digits':
+                                $multiotp->SetDefault2faDigits(intval($actual_array[1]));
                                 $write_config_data = true;
                                 break;
                             case 'default-pin-digits':
@@ -2033,7 +2047,7 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 if ("without2fa" == mb_strtolower($multiotp->GetUserAlgorithm(),'UTF-8')) {
                     if (($multiotp->GetUserAutolockTime() > 0) && ($multiotp->GetUserAutolockTime() < time())) {
                         $multiotp->DeleteUser("", TRUE);
-                        $this->WriteLog("Error: cache too old for user ".$real_user.", cache deleted.", FALSE, FALSE, $result, 'User', $real_user);
+                        $multiotp->WriteLog("Error: cache too old for user ".$real_user.", cache deleted.", FALSE, FALSE, $result, 'User', $real_user);
                         $result = 81; // ERROR: Cache too old for this user
                     } elseif (1 != $multiotp->GetUserActivated()) {
                       $multiotp->DeleteUser("", TRUE);
@@ -2249,27 +2263,31 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
             $result = 19;
             break;
         case "noparam":
-            $result = 30;
-            echo $multiotp->GetClassName()." ".$multiotp->GetVersion()." (".$multiotp->GetDate().")";
-            if (!$no_php_info) {
-              if (PHP_MAJOR_VERSION > 4) {
-                echo ", running with PHP ".phpversion();
+            if ($not_a_command) {
+              $result = 19;
+            } else {
+              $result = 30;
+              echo $multiotp->GetClassName()." ".$multiotp->GetVersion()." (".$multiotp->GetDate().")";
+              if (!$no_php_info) {
+                if (PHP_MAJOR_VERSION > 4) {
+                  echo ", running with PHP ".phpversion();
+                }
+                if (is64bitPHP()) {
+                  echo " [64 bits]";
+                }
+                if ($multiotp->GetCliProxyMode()) {
+                  echo " (CLI proxy mode)";
+                } else {
+                  echo " (CLI mode)";
+                }
               }
-              if (is64bitPHP()) {
-                echo " [64 bits]";
-              }
-              if ($multiotp->GetCliProxyMode()) {
-                echo " (CLI proxy mode)";
-              } else {
-                echo " (CLI mode)";
-              }
+              echo $crlf;
+              echo $multiotp->GetCopyright().$crlf;
+              echo $multiotp->GetWebsite()."   (you can try the [Donate] button ;-)".$crlf;
+              echo $crlf;
+              echo "Not enough parameters, type multiotp -help for information about the options.";
+              echo $crlf;
             }
-            echo $crlf;
-            echo $multiotp->GetCopyright().$crlf;
-            echo $multiotp->GetWebsite()."   (you can try the [Donate] button ;-)".$crlf;
-            echo $crlf;
-            echo "Not enough parameters, type multiotp -help for information about the options.";
-            echo $crlf;
             break;
         case "error":
             break;
@@ -2322,7 +2340,7 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 echo $crlf;
                 echo "To quickly create a user without a prefix PIN request, use -fastcreatenopin".$crlf;
                 echo $crlf;
-                echo "To quickly create a user with a prefix PIN request, use -fastecreatewithpin".$crlf;
+                echo "To quickly create a user with a prefix PIN request, use -fastcreatewithpin".$crlf;
                 echo $crlf;
                 echo "If a token is locked (return code 24), you have to resync the token to unlock.".$crlf;
                 echo "Requesting an SMS token (put sms as the password), and typing the received".$crlf;
@@ -2357,7 +2375,7 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 echo $crlf;
                 echo " multiotp -fastcreate user [pin] (create a TOTP compatible token)".$crlf;
                 echo " multiotp -fastcreatenopin user (create a user without a prefix PIN)".$crlf;
-                echo " multiotp -fastecreatewithpin user [pin] (create a user with a prefix PIN)".$crlf;
+                echo " multiotp -fastcreatewithpin user [pin] (create a user with a prefix PIN)".$crlf;
                 echo " multiotp -createga user base32_seed [pin] (create Google Auth user with TOTP)".$crlf;
                 echo " multiotp -create user algo seed pin digits [pos|interval]".$crlf;
                 echo " multiotp -create -token-id user token-id pin".$crlf;
@@ -2424,6 +2442,7 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 echo "                             (code result are also displayed on the console)".$crlf;
                 echo "               debug-prefix: add a prefix when using the debug mode".$crlf;
                 echo "                             (for example 'Reply-Message := ' for FreeRADIUS)".$crlf;
+                echo "         default-2fa-digits: [6-16] set the default amount of OTP digits".$crlf;
                 echo "         default-pin-digits: [4-32] set the default amount of PIN digits".$crlf;
                 echo " default-request-prefix-pin: [0|1] prefix PIN enabled/disabled by default".$crlf;
                 echo "   default-request-ldap-pwd: [0|1] LDAP/AD password enabled/disabled by default".$crlf;
@@ -2563,6 +2582,8 @@ for ($every_command = 0; $every_command < count($command_array); $every_command+
                 echo " -src=Packet-Src-IP-Address".$crlf;
                 echo " -state=State".$crlf;
                 echo " -tag=Client-Shortname".$crlf;
+                echo $crlf;
+                echo " -usersid=Windows SID of the user (provided by multiOTP Credential Provider)".$crlf;
                 echo $crlf;
                 echo $crlf;
                 echo "Client/server inline parameters:".$crlf;

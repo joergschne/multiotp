@@ -3,10 +3,10 @@ multiOTP open source
 multiOTP open source is a GNU LGPL implementation of a strong two-factor authentication PHP class  
 multiOTP open source is OATH certified for HOTP/TOTP
 
-(c) 2010-2024 SysCo systemes de communication sa  
+(c) 2010-2025 SysCo systemes de communication sa  
 https://www.multiotp.net/
 
-Current build: 5.9.8.0 (2024-08-26)
+Current build: 5.9.9.1 (2025-01-20)
 
 Binary download: https://download.multiotp.net/ (including virtual appliance image)
 
@@ -151,13 +151,26 @@ WHAT'S NEW IN THIS 5.9.x RELEASE
 - Users without 2FA tokens don't see the second screen in the Credential Provider during logon
 - New Raspberry, Hyper-V and OVA appliances available (version 011, based on Debian 11)
 - Scratchlist can be generated from the Web GUI
-- {MultiOtpDisplayName} (AD/LDAP DisplayName) can be used in templates
+- {MultiotpUserDisplayName} (AD/LDAP DisplayName) can be used in templates
 - New open source on-premises SMS provider support (https://github.com/multiOTP/SMSGateway)
 
 
 CHANGE LOG OF RELEASED VERSIONS
 ===============================
 ```
+2025-01-20 5.9.9.1 FIX: Windows backup temp folder is now the default system temp folder
+                   FIX: Adding -sync-delete-retention-days parameter doesn't return missing parameters error
+                   FIX: Case sensitive issue has been fixed with MSCHAPv2 authentication (thanks Alexey)
+                   FIX: Case sensitive issue has been fixed during FastCreateUser process
+                   ENH: Created users are trimmed to avoid bad space prefix/suffix during copy/paste
+                   ENH: multiOTP Credential Provider enhanced support
+                   ENH: New default-2fa-digits command line option to set the default amount of OTP digits 
+                   ENH: PHP 8.4.x deprecated code cleaned (xml_set_object removed)
+2025-01-10 5.9.8.3 FIX: {MultiotpUserDisplayName} tag usage in templates (was not replaced in the QRcode)
+                   ENH: New Message-Authenticator requirement support for FortiGate v7.2.10+, v7.4.5+ and v7.6.1+
+                   ENH: New SetCurrentUserSid function for new Credential Provider -usersid option
+                   ENH: Embedded Windows PHP edition updated to version 8.3.15
+                   ENH: Embedded Windows nginx edition updated to version 1.27.3
 2024-08-26 5.9.8.0 FIX: Database backend setup and initialization was not working well with some PHP version
                    ENH: New option to force writing logs only in file (even if the backend is a database)
                    ENH: Spryng SMS provider support
@@ -227,7 +240,7 @@ CHANGE LOG OF RELEASED VERSIONS
                    ENH: Additional CLI option -nt-key-only added
 2022-05-26 5.9.0.3 FIX: Issue with /run/php when a Docker container is restarted
                    FIX: {MultiOtpVersion} is now correctly replaced in scratchtemplate.html
-                   ENH: {MultiOtpDisplayName} tag (AD/LDAP DisplayName) can be used in templates
+                   ENH: {MultiotpUserDisplayName} tag (AD/LDAP DisplayName) can be used in templates
 2022-05-20 5.9.0.2 FIX: User account containing octal encoded ISO characters are now also converted to UTF
 2022-05-18 5.9.0.1 FIX: Set specific flags to run Perl scripts from FreeRADIUS
 2022-05-18 5.9.0.0 FIX: User account containing special ISO characters are now also converted to UTF
@@ -1916,8 +1929,8 @@ MULTIOTP COMMAND LINE TOOL
 ==========================
 
 ``` 
-multiOTP 5.9.8.0 (2024-08-26)
-(c) 2010-2024 SysCo systemes de communication sa
+multiOTP 5.9.9.1 (2025-01-20)
+(c) 2010-2025 SysCo systemes de communication sa
 http://www.multiOTP.net   (you can try the [Donate] button ;-)
 
 multiotp will check if the token of a user is correct, based on a specified
@@ -1942,7 +1955,7 @@ If the PIN is not given, it is generated randomly.
 
 To quickly create a user without a prefix PIN request, use -fastcreatenopin
 
-To quickly create a user with a prefix PIN request, use -fastecreatewithpin
+To quickly create a user with a prefix PIN request, use -fastcreatewithpin
 
 If a token is locked (return code 24), you have to resync the token to unlock.
 Requesting an SMS token (put sms as the password), and typing the received
@@ -2041,7 +2054,7 @@ Usage:
 
  multiotp -fastcreate user [pin] (create a TOTP compatible token)
  multiotp -fastcreatenopin user (create a user without a prefix PIN)
- multiotp -fastecreatewithpin user [pin] (create a user with a prefix PIN)
+ multiotp -fastcreatewithpin user [pin] (create a user with a prefix PIN)
  multiotp -createga user base32_seed [pin] (create Google Auth user with TOTP)
  multiotp -create user algo seed pin digits [pos|interval]
  multiotp -create -token-id user token-id pin
@@ -2107,6 +2120,7 @@ Usage:
                              (code result are also displayed on the console)
                debug-prefix: add a prefix when using the debug mode
                              (for example 'Reply-Message := ' for FreeRADIUS)
+         default-2fa-digits: [6-16] set the default amount of OTP digits
          default-pin-digits: [4-32] set the default amount of PIN digits
  default-request-prefix-pin: [0|1] prefix PIN enabled/disabled by default
    default-request-ldap-pwd: [0|1] LDAP/AD password enabled/disabled by default
@@ -2246,6 +2260,8 @@ Authentication parameters:
  -src=Packet-Src-IP-Address
  -state=State
  -tag=Client-Shortname
+
+ -usersid=Windows SID of the user (provided by multiOTP Credential Provider)
 
 
 Client/server inline parameters:
@@ -2446,8 +2462,8 @@ Visit https://forum.multiotp.net/ for additional support
 ``` 
  
 ``` 
-Hash verification for multiotp_5.9.8.0.zip 
-SHA256:13cfaad7da594014c106faec4a934d12d720ce92820b21816e6f0d5d4e1231e4 
-SHA1:9df76683482959dab99c2688332e7eaa3b4033b7 
-MD5:1d73c1f2c102b3243b1b21025cb412f5 
+Hash verification for multiotp_5.9.9.1.zip 
+SHA256:d391722d8c2fcf231773d0a0075a628cbbdfd10a3d78f9573ed663bede2ec32d 
+SHA1:4564e108a96d062b06979b5cf5e35dde30ca3ca6 
+MD5:0c9bc189ddc4e4a66ea5112636b683b2 
 ``` 

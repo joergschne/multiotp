@@ -9,10 +9,10 @@ REM
 REM Windows batch file for Windows 2K/XP/2003/7/2008/8/2012/10
 REM
 REM @author    Andre Liechti, SysCo systemes de communication sa, <info@multiotp.net>
-REM @version   5.9.8.0
-REM @date      2024-08-26
+REM @version   5.9.9.1
+REM @date      2025-01-20
 REM @since     2014-04-22
-REM @copyright (c) 2014-2024 SysCo systemes de communication sa
+REM @copyright (c) 2014-2025 SysCo systemes de communication sa
 REM @copyright GNU Lesser General Public License
 REM
 REM
@@ -31,7 +31,7 @@ REM
 REM
 REM Licence
 REM
-REM   Copyright (c) 2014-2024 SysCo systemes de communication sa
+REM   Copyright (c) 2014-2025 SysCo systemes de communication sa
 REM   SysCo (tm) is a trademark of SysCo systemes de communication sa
 REM   (http://www.sysco.ch/)
 REM   All rights reserved.

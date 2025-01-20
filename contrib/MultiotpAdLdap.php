@@ -3,10 +3,11 @@
     PHP LDAP CLASS FOR MANIPULATING ACTIVE DIRECTORY
     Version 2.1+
 
-	Adapted 2013-2022 by SysCo/al 5.9.5.5 (2023-01-18)
+	Adapted 2013-2024 by SysCo/al 5.9.8.2 (2024-12-20)
 
  *
- * 
+ *   2024-12-20 5.9.8.2 SysCo/al $attributes["telephoneNumber"] checked
+ *
  *   2023-01-18 5.9.5.5 SysCo/al New _ldap_filter attribute
  *                               New paging support for 7.3+
  *
@@ -1470,6 +1471,7 @@ class MultiotpAdLdap {
       if ($attributes["script_path"]){ $mod["scriptPath"][0]=$attributes["script_path"]; }
       if ($attributes["surname"]){ $mod["sn"][0]=$attributes["surname"]; }
       if ($attributes["title"]){ $mod["title"][0]=$attributes["title"]; }
+      if ($attributes["telephoneNumber"]){ $mod["telephoneNumber"][0]=$attributes["telephoneNumber"]; }
       if ($attributes["telephone"]){ $mod["telephoneNumber"][0]=$attributes["telephone"]; }
       if ($attributes["mobile"]){ $mod["telephoneNumber"][0]=$attributes["mobile"]; }
       if ($attributes["web_page"]){ $mod["wWWHomePage"][0]=$attributes["web_page"]; }

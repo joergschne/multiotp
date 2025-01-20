@@ -16,8 +16,8 @@
 # Please check https://www.multiotp.net/ and you will find the magic button ;-)
 #
 # @author    Andre Liechti, SysCo systemes de communication sa, <info@multiotp.net>
-# @version   5.9.8.0
-# @date      2024-08-26
+# @version   5.9.9.1
+# @date      2025-01-20
 # @since     2013-11-29
 # @copyright (c) 2013-2022 by SysCo systemes de communication sa
 # @copyright GNU Lesser General Public License
@@ -71,7 +71,7 @@ SSH_ROOT_LOGIN="1"
 DEFAULT_IP="192.168.1.44"
 REBOOT_AT_THE_END="1"
 
-TEMPVERSION="@version   5.9.8.0"
+TEMPVERSION="@version   5.9.9.1"
 MULTIOTPVERSION="$(echo -e "${TEMPVERSION:8}" | tr -d '[[:space:]]')"
 IFS='.' read -ra MULTIOTPVERSIONARRAY <<< "$MULTIOTPVERSION"
 MULTIOTPMAJORVERSION=${MULTIOTPVERSIONARRAY[0]}
@@ -1243,6 +1243,10 @@ if [ -e /etc/freeradius/3.0/ ] ; then
     echo "Add some lines before the pap module in authorize section of default"
     sed -i '/logintime/a\\n        # Handle multiotp authentication\n        multiotp' /etc/freeradius/3.0/sites-available/default
 
+    # Add some lines after post-auth { in order to force Message-Authenticator in the answer (2025-01-08)
+    echo "Add some lines before the pap module in authorize section of default"
+    sed -i '/post-auth {/a\\n  update reply { # multiOTP force Message-Authenticator (1/3)\n    Message-Authenticator := 0x00 # multiOTP force Message-Authenticator (2/3)\n  } # multiOTP force Message-Authenticator (3/3)' /etc/freeradius/3.0/sites-available/default
+
     # Add some lines in the authenticate section of default
     echo "Add some lines in the authenticate section of default"
     sed -i '/authenticate {/a\        Auth-Type multiotp {\n                multiotp\n        } #multiotp\n        Auth-Type multiotpmschap {\n                multiotpmschap\n        } #multiotpmschap\n        Auth-Type Perl { #multiotp\n                perl #multiotp\n        } #multiotp\n' /etc/freeradius/3.0/sites-available/default
@@ -1259,11 +1263,14 @@ if [ -e /etc/freeradius/3.0/ ] ; then
     echo "Enable files and add perl just after"
     sed -i '/raddb\/mods-config\/files\/authorize/{n;d}' /etc/freeradius/3.0/sites-available/inner-tunnel
     sed -i '/raddb\/mods-config\/files/a\        files\n        perl #multiotp\n        if (ok || updated) { #multiotp\n            update control { #multiotp\n                Auth-Type := Perl #multiotp\n                Client-Shortname = "%{Client-Shortname}" #multiotp\n                Packet-Src-IP-Address = "%{Packet-Src-IP-Address}" #multiotp\n            } #multiotp\n        } #multiotp' /etc/freeradius/3.0/sites-available/inner-tunnel    
-    
 
     # Add some lines before the pap module (after logintime) in authorize section of inner-tunnel
     echo "Add some lines before the pap module in authorize section of inner-tunnel"
     sed -i '/logintime/a\\n        # Handle multiotp authentication\n        multiotp' /etc/freeradius/3.0/sites-available/inner-tunnel
+
+    # Add some lines after post-auth { in order to force Message-Authenticator in the answer (2025-01-08)
+    echo "Add some lines before the pap module in authorize section of inner-tunnel"
+    sed -i '/post-auth {/a\\n  update reply { # multiOTP force Message-Authenticator (1/3)\n    Message-Authenticator := 0x00 # multiOTP force Message-Authenticator (2/3)\n  } # multiOTP force Message-Authenticator (3/3)' /etc/freeradius/3.0/sites-available/inner-tunnel
 
     # Add some lines in the authenticate section of inner-tunnel
     echo "Add some lines in the authenticate section of inner-tunnel"
