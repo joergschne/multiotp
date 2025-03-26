@@ -1142,6 +1142,9 @@ if (FALSE !== mb_strpos($data,'<multiOTP')) {
                             }
 
                             userslist = userslist + usersinfo[0];
+
+                            //JoSch
+                            userslist = userslist + usersinfo[2];
                             
                             if (synced) {
                               userslist = userslist + ' ' + '[AD/LDAP]';

@@ -10664,13 +10664,22 @@ class Multiotp
     if (("" != $user_list) && (count($users_array) > 0)) {
       foreach ($users_array as $user) {
         $this->SetUser($user);
-        array_push($array_result, $user . "|" . "s" . ((1 == intval($this->GetUserSynchronized())) ? "1" : "0"));
-      }
-      return implode("\t", $array_result);
-    } else {
-      return "";
-    }
-  }
+
+        //JoSch
+                if ($this->GetUserAlgorithm($user) == "hotp") {
+        
+            //array_push($array_result, $user . "|" . "s" . ((1 == intval($this->GetUserSynchronized())) ? "1" : "0"));
+                    array_push($array_result, $user . "|" . "s" . ((1 == intval($this->GetUserSynchronized())) ? "1" : "0") . "|" . " (hotp:" . $this->GetUserTokenSerialNumber($user) . "-" . ($this->GetUserTokenLastEvent()+1) . ")");
+                } else {
+                    array_push($array_result, $user . "|" . "s" . ((1 == intval($this->GetUserSynchronized())) ? "1" : "0") . "|" . " (" . $this->GetUserAlgorithm($user) .  ")");
+                }
+              }
+              return implode("\t", $array_result);
+            } else {
+              return "";
+            }
+          }
+        
 
 
   /**
